@@ -17,62 +17,85 @@ import psycopg2
 def pgcreatetable():
     conn = psycopg2.connect(database="postgres", user="postgres", password="123456", host="10.99.3.119", port="5432")
     cur = conn.cursor()
-    cur.execute("select * from createlogsorttemp()")
+    cur.execute("select * from logcleanV1()")
     conn.commit()
     conn.close()
 
-def pgdroptable():
-    conn = psycopg2.connect(database="postgres", user="postgres", password="123456", host="10.99.3.119", port="5432")
-    cur = conn.cursor()
-    cur.execute("drop table logsorttemp")
-    conn.commit()
-    conn.close()
+#def pgdroptable():
+#    conn = psycopg2.connect(database="postgres", user="postgres", password="123456", host="10.99.3.119", port="5432")
+#    cur = conn.cursor()
+#    cur.execute("drop table logsorttemp")
+#    conn.commit()
+#    conn.close()
 
 def pgselect():
     engine = create_engine('postgresql://postgres:123456@10.99.66.86:5432/postgres') #create_engine说明：dialect[+driver]://user:password@host/dbname[?key=value..]
     
-    sql_cmd = 'select * from logcleanfinalTemp'
+    sql_cmd = 'select * from logcleanfinal'
     data = pd.read_sql(sql_cmd,engine)
     
     return data
 
+def sqlservertru():
+    
+    #连接sqlserver，并清空表
+    conn=pymssql.connect(host='10.99.66.46',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
+    cur=conn.cursor()
+    
+    cur.execute("truncate table logcleanfinal")
+    
+    conn.commit()
+    
+def sqlserverproc():
+    
+    #连接sqlserver，并清空表
+    conn=pymssql.connect(host='10.99.66.46',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
+    cur=conn.cursor()
+    
+    cur.execute("EXEC loginput")
+    
+    conn.commit()
+    
 #方法一：使用Pandas库的to_sql方法，但是效率太差(一个字段，8分钟46万)
 def sqlserverinsert(data):
 
     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-    engine = create_engine('mssql+pymssql://david:life@1234@10.99.3.47/LifeVc.com')
+    engine = create_engine('mssql+pymssql://david:life@1234@10.99.66.46/LifeVc.com')
     
     data.to_sql('logcleanfinal', engine, if_exists='append',index=False, chunksize=10000)
     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
     
-#方法二：直接通过语句导入，效率和Pandas差不多，而且语句比较复杂
-def sqlserverinsertV2(data):
-    #Dataframe转化为listoftuple
-    train_data = np.array(data)
-    train_data_list = train_data.tolist()
-    
-    train_data_list_tuple=[]
-    for l in train_data_list:
-        train_tuple=tuple((l))
-        train_data_list_tuple.append(train_tuple)
-    
-    #连接sqlserver，并导入表
-    conn=pymssql.connect(host='10.99.66.46',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
-    cur=conn.cursor()
-    
-    cur.executemany("insert into logcheck(tracerid,spanid) values (%s,%s)",train_data_list_tuple)
-    
-    conn.commit()
+##方法二：直接通过语句导入，效率和Pandas差不多，而且语句比较复杂
+#def sqlserverinsertV2(data):
+#    #Dataframe转化为listoftuple
+#    train_data = np.array(data)
+#    train_data_list = train_data.tolist()
+#    
+#    train_data_list_tuple=[]
+#    for l in train_data_list:
+#        train_tuple=tuple((l))
+#        train_data_list_tuple.append(train_tuple)
+#    
+#    #连接sqlserver，并导入表
+#    conn=pymssql.connect(host='10.99.66.46',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
+#    cur=conn.cursor()
+#    
+#    cur.executemany("insert into logcheck(tracerid,spanid) values (%s,%s)",train_data_list_tuple)
+#    
+#    conn.commit()
 
 if __name__ == '__main__':
-    #创建logsort临时表
-#    pgcreatetable()
+    #创建logcleanfinal临时表
+    pgcreatetable()
     
     #提取数据转换成dataframe
     data = pgselect()
     
+    #清空sqlserver临时表
+    sqlservertru()
+    
     #使用方法一导入sqlserver
     sqlserverinsert(data)
     
-    #删除logsort临时表
-#    pgdroptable()
+    #执行sqlserver存储过程进入最终表
+    sqlserverproc()
