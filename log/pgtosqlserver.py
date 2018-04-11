@@ -29,7 +29,7 @@ def pgcreatetable():
 #    conn.close()
 
 def pgselect():
-    engine = create_engine('postgresql://postgres:123456@10.99.66.86:5432/postgres') #create_engine说明：dialect[+driver]://user:password@host/dbname[?key=value..]
+    engine = create_engine('postgresql://postgres:123456@10.99.3.119:5432/postgres') #create_engine说明：dialect[+driver]://user:password@host/dbname[?key=value..]
     
     sql_cmd = 'select * from logcleanfinal'
     data = pd.read_sql(sql_cmd,engine)
@@ -49,7 +49,7 @@ def sqlservertru():
 def sqlserverproc():
     
     #连接sqlserver，并清空表
-    conn=pymssql.connect(host='10.99.66.46',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
+    conn=pymssql.connect(host='10.99.3.47',user='david',password='life@1234',database='LifeVc.com',charset='GBK')
     cur=conn.cursor()
     
     cur.execute("EXEC loginput")
@@ -60,7 +60,7 @@ def sqlserverproc():
 def sqlserverinsert(data):
 
     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
-    engine = create_engine('mssql+pymssql://david:life@1234@10.99.66.46/LifeVc.com')
+    engine = create_engine('mssql+pymssql://david:life@1234@10.99.3.47/LifeVc.com')
     
     data.to_sql('logcleanfinal', engine, if_exists='append',index=False, chunksize=10000)
     print(time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time())))
